@@ -1,4 +1,3 @@
-// Sistema de Gerenciamento de Biblioteca em C++
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -7,22 +6,25 @@
 #include <ctime>
 using namespace std;
 
+// Estrutura de dados para armazenar informa√ß√µes do livro
 struct Livro {
     string titulo, autor, isbn, genero;
     bool emprestado;
-    string idUsuario;
+    string idUtilizador;
     string dataEmprestimo;
 };
 
-struct Usuario {
+// Estrutura de dados para armazenar informa√ß√µes do utilizador
+struct Utilizador {
     string nome, id;
     vector<string> historico;
 };
 
+// Vetores para armazenar livros e utilizadores
 vector<Livro> livros;
-vector<Usuario> usuarios;
+vector<Utilizador> utilizadores;
 
-// FunÁıes auxiliares
+// Fun√ß√µes auxiliares
 string dataAtual() {
     time_t agora = time(0);
     tm *ltm = localtime(&agora);
@@ -31,15 +33,16 @@ string dataAtual() {
     return string(data);
 }
 
-// PersistÍncia de dados
+// Salvar livros no arquivo CSV
 void salvarLivros() {
     ofstream file("livros.csv");
     for (auto &l : livros) {
         file << l.titulo << "," << l.autor << "," << l.isbn << "," << l.genero << "," << l.emprestado
-             << "," << l.idUsuario << "," << l.dataEmprestimo << "\n";
+             << "," << l.idUtilizador << "," << l.dataEmprestimo << "\n";
     }
 }
 
+// Carregar livros do arquivo CSV
 void carregarLivros() {
     ifstream file("livros.csv");
     string linha;
@@ -53,60 +56,62 @@ void carregarLivros() {
         getline(ss, l.isbn, ',');
         getline(ss, l.genero, ',');
         getline(ss, emprestado, ',');
-        getline(ss, l.idUsuario, ',');
+        getline(ss, l.idUtilizador, ',');
         getline(ss, l.dataEmprestimo, ',');
         l.emprestado = (emprestado == "1");
         livros.push_back(l);
     }
 }
 
-void salvarUsuarios() {
-    ofstream file("usuarios.csv");
-    for (auto &u : usuarios) {
+// Salvar utilizadores no arquivo CSV
+void salvarUtilizadores() {
+    ofstream file("utilizadores.csv");
+    for (auto &u : utilizadores) {
         file << u.nome << "," << u.id;
         for (auto &h : u.historico) file << "," << h;
         file << "\n";
     }
 }
 
-void carregarUsuarios() {
-    ifstream file("usuarios.csv");
+// Carregar utilizadores do arquivo CSV
+void carregarUtilizadores() {
+    ifstream file("utilizadores.csv");
     string linha;
-    usuarios.clear();
+    utilizadores.clear();
     while (getline(file, linha)) {
         stringstream ss(linha);
-        Usuario u;
+        Utilizador u;
         getline(ss, u.nome, ',');
         getline(ss, u.id, ',');
         string emprestimo;
         while (getline(ss, emprestimo, ',')) u.historico.push_back(emprestimo);
-        usuarios.push_back(u);
+        utilizadores.push_back(u);
     }
 }
 
-// Funcionalidades principais
+// Fun√ß√µes do sistema
 void adicionarLivro() {
     Livro l;
-    cout << "TÌtulo: "; getline(cin, l.titulo);
+    cout << "T√≠tulo: "; getline(cin, l.titulo);
     cout << "Autor: "; getline(cin, l.autor);
     cout << "ISBN: "; getline(cin, l.isbn);
-    cout << "GÍnero: "; getline(cin, l.genero);
+    cout << "G√™nero: "; getline(cin, l.genero);
     l.emprestado = false;
-    l.idUsuario = "";
+    l.idUtilizador = "";
     l.dataEmprestimo = "";
     livros.push_back(l);
     salvarLivros();
     cout << "Livro adicionado com sucesso!\n";
 }
 
+// Pesquisar livro por t√≠tulo, autor ou g√™nero
 void pesquisarLivro() {
     string termo;
     int criterio;
-    cout << "Pesquisar por: 1. TÌtulo 2. Autor 3. GÍnero\nEscolha: ";
+    cout << "Pesquisar por: 1. T√≠tulo 2. Autor 3. G√™nero\nEscolha: ";
     while (!(cin >> criterio) || criterio < 1 || criterio > 3) {
-        cout << "Entrada inv·lida. Escolha 1, 2 ou 3: ";
+        cout << "Entrada inv√°lida. Escolha 1, 2 ou 3: ";
         cin.clear();
-        //cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
     cin.ignore();
     cout << "Digite o termo: "; getline(cin, termo);
@@ -122,106 +127,110 @@ void pesquisarLivro() {
     if (!encontrado) cout << "Nenhum livro encontrado com o termo fornecido.\n";
 }
 
-void registrarUsuario() {
-    Usuario u;
+// Registrar novo utilizador
+void registrarUtilizador() {
+    Utilizador u;
     cout << "Nome: "; getline(cin, u.nome);
     cout << "ID: "; getline(cin, u.id);
-    usuarios.push_back(u);
-    salvarUsuarios();
-    cout << "Usu·rio registrado com sucesso!\n";
+    utilizadores.push_back(u);
+    salvarUtilizadores();
+    cout << "Utilizador registrado com sucesso!\n";
 }
 
+
+// Emprestar livro a um utilizador
 void emprestarLivro() {
     string isbn, id;
     cout << "ISBN do livro: "; getline(cin, isbn);
-    cout << "ID do usu·rio: "; getline(cin, id);
+    cout << "ID do utilizador: "; getline(cin, id);
     for (auto &l : livros) {
         if (l.isbn == isbn && !l.emprestado) {
             l.emprestado = true;
-            l.idUsuario = id;
+            l.idUtilizador = id;
             l.dataEmprestimo = dataAtual();
-            for (auto &u : usuarios) {
+            for (auto &u : utilizadores) {
                 if (u.id == id) {
                     u.historico.push_back("Emprestado: " + l.titulo + " em " + l.dataEmprestimo);
                     break;
                 }
             }
-            salvarLivros(); salvarUsuarios();
+            salvarLivros(); salvarUtilizadores();
             cout << "Livro emprestado com sucesso!\n";
             return;
         }
     }
-    cout << "Livro n„o disponÌvel ou ISBN incorreto.\n";
+    cout << "Livro n√£o dispon√≠vel ou ISBN incorreto.\n";
 }
 
+// Devolver livro emprestado
 void devolverLivro() {
     string isbn;
     cout << "ISBN do livro a devolver: "; getline(cin, isbn);
     for (auto &l : livros) {
         if (l.isbn == isbn && l.emprestado) {
-            for (auto &u : usuarios) {
-                if (u.id == l.idUsuario) {
+            for (auto &u : utilizadores) {
+                if (u.id == l.idUtilizador) {
                     u.historico.push_back("Devolvido: " + l.titulo + " em " + dataAtual());
                     break;
                 }
             }
             l.emprestado = false;
-            l.idUsuario = "";
+            l.idUtilizador = "";
             l.dataEmprestimo = "";
-            salvarLivros(); salvarUsuarios();
+            salvarLivros(); salvarUtilizadores();
             cout << "Livro devolvido com sucesso!\n";
             return;
         }
     }
-    cout << "Livro n„o encontrado ou n„o emprestado.\n";
+    cout << "Livro n√£o encontrado ou n√£o emprestado.\n";
 }
 
+// Gerar relat√≥rios
 void relatorios() {
-    cout << "\nRelatÛrios:\n";
-    cout << "1. Livros Emprestados\n2. Livros DisponÌveis\n3. HistÛrico por Usu·rio\nEscolha: ";
+    cout << "\nRelat√≥rios:\n";
+    cout << "1. Livros Emprestados\n2. Livros Dispon√≠veis\n3. Hist√≥rico por Utilizador\nEscolha: ";
     int opcao;
     while (!(cin >> opcao) || opcao < 1 || opcao > 3) {
-        cout << "Entrada inv·lida. Escolha entre 1 e 3: ";
+        cout << "Entrada inv√°lida. Escolha entre 1 e 3: ";
         cin.clear();
-        //cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
     cin.ignore();
     if (opcao == 1) {
         cout << "\nLivros Emprestados:\n";
-        for (auto &l : livros) if (l.emprestado) cout << l.titulo << " - " << l.autor << " (Emprestado por: " << l.idUsuario << ")\n";
+        for (auto &l : livros) if (l.emprestado) cout << l.titulo << " - " << l.autor << " (Emprestado por: " << l.idUtilizador << ")\n";
     } else if (opcao == 2) {
-        cout << "\nLivros DisponÌveis:\n";
+        cout << "\nLivros Dispon√≠veis:\n";
         for (auto &l : livros) if (!l.emprestado) cout << l.titulo << " - " << l.autor << "\n";
     } else if (opcao == 3) {
         string id;
-        cout << "ID do usu·rio: "; getline(cin, id);
-        for (auto &u : usuarios) {
+        cout << "ID do utilizador: "; getline(cin, id);
+        for (auto &u : utilizadores) {
             if (u.id == id) {
-                cout << "HistÛrico de " << u.nome << ":\n";
+                cout << "Hist√≥rico de " << u.nome << ":\n";
                 for (auto &h : u.historico) cout << "- " << h << "\n";
                 return;
             }
         }
-        cout << "Usu·rio n„o encontrado.\n";
+        cout << "Utilizador n√£o encontrado.\n";
     }
 }
 
+// Menu principal
 void menu() {
     int opcao;
     do {
         cout << "\n=== Sistema de Biblioteca ===\n";
-        cout << "1. Adicionar Livro\n2. Pesquisar Livro\n3. Registrar Usu·rio\n4. Emprestar Livro\n5. Devolver Livro\n6. RelatÛrios\n0. Sair\n";
+        cout << "1. Adicionar Livro\n2. Pesquisar Livro\n3. Registrar Utilizador\n4. Emprestar Livro\n5. Devolver Livro\n6. Relat√≥rios\n0. Sair\n";
         cout << "Escolha: ";
         while (!(cin >> opcao) || opcao < 0 || opcao > 6) {
-            cout << "OpÁ„o inv·lida. Escolha entre 0 e 6: ";
+            cout << "Op√ß√£o inv√°lida. Escolha entre 0 e 6: ";
             cin.clear();
-            //cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
         cin.ignore();
         switch (opcao) {
             case 1: adicionarLivro(); break;
             case 2: pesquisarLivro(); break;
-            case 3: registrarUsuario(); break;
+            case 3: registrarUtilizador(); break;
             case 4: emprestarLivro(); break;
             case 5: devolverLivro(); break;
             case 6: relatorios(); break;
@@ -230,10 +239,10 @@ void menu() {
     } while (opcao != 0);
 }
 
+// Fun√ß√£o principal
 int main() {
     carregarLivros();
-    carregarUsuarios();
+    carregarUtilizadores();
     menu();
     return 0;
 }
-
