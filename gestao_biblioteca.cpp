@@ -10,19 +10,19 @@ using namespace std;
 struct Livro {
     string titulo, autor, isbn, genero;
     bool emprestado;
-    string idUsuario;
+    string idUtilizador;
     string dataEmprestimo;
 };
 
-struct Usuario {
+struct Utilizador {
     string nome, id;
     vector<string> historico;
 };
 
 vector<Livro> livros;
-vector<Usuario> usuarios;
+vector<Utilizador> utilizadores;
 
-// Funções auxiliares
+// FunÃ§Ãµes auxiliares
 string dataAtual() {
     time_t agora = time(0);
     tm *ltm = localtime(&agora);
@@ -31,12 +31,12 @@ string dataAtual() {
     return string(data);
 }
 
-// Persistência de dados
+// PersistÃªncia de dados
 void salvarLivros() {
     ofstream file("livros.csv");
     for (auto &l : livros) {
         file << l.titulo << "," << l.autor << "," << l.isbn << "," << l.genero << "," << l.emprestado
-             << "," << l.idUsuario << "," << l.dataEmprestimo << "\n";
+             << "," << l.idUtilizador << "," << l.dataEmprestimo << "\n";
     }
 }
 
@@ -53,46 +53,46 @@ void carregarLivros() {
         getline(ss, l.isbn, ',');
         getline(ss, l.genero, ',');
         getline(ss, emprestado, ',');
-        getline(ss, l.idUsuario, ',');
+        getline(ss, l.idUtilizador, ',');
         getline(ss, l.dataEmprestimo, ',');
         l.emprestado = (emprestado == "1");
         livros.push_back(l);
     }
 }
 
-void salvarUsuarios() {
-    ofstream file("usuarios.csv");
-    for (auto &u : usuarios) {
+void salvarUtilizadores() {
+    ofstream file("utilizadores.csv");
+    for (auto &u : utilizadores) {
         file << u.nome << "," << u.id;
         for (auto &h : u.historico) file << "," << h;
         file << "\n";
     }
 }
 
-void carregarUsuarios() {
-    ifstream file("usuarios.csv");
+void carregarUtilizadores() {
+    ifstream file("utilizadores.csv");
     string linha;
-    usuarios.clear();
+    utilizadores.clear();
     while (getline(file, linha)) {
         stringstream ss(linha);
-        Usuario u;
+        Utilizador u;
         getline(ss, u.nome, ',');
         getline(ss, u.id, ',');
         string emprestimo;
         while (getline(ss, emprestimo, ',')) u.historico.push_back(emprestimo);
-        usuarios.push_back(u);
+        utilizadores.push_back(u);
     }
 }
 
 // Funcionalidades principais
 void adicionarLivro() {
     Livro l;
-    cout << "Título: "; getline(cin, l.titulo);
+    cout << "TÃ­tulo: "; getline(cin, l.titulo);
     cout << "Autor: "; getline(cin, l.autor);
     cout << "ISBN: "; getline(cin, l.isbn);
-    cout << "Gênero: "; getline(cin, l.genero);
+    cout << "GÃªnero: "; getline(cin, l.genero);
     l.emprestado = false;
-    l.idUsuario = "";
+    l.idUtilizador = "";
     l.dataEmprestimo = "";
     livros.push_back(l);
     salvarLivros();
@@ -102,11 +102,10 @@ void adicionarLivro() {
 void pesquisarLivro() {
     string termo;
     int criterio;
-    cout << "Pesquisar por: 1. Título 2. Autor 3. Gênero\nEscolha: ";
+    cout << "Pesquisar por: 1. TÃ­tulo 2. Autor 3. GÃªnero\nEscolha: ";
     while (!(cin >> criterio) || criterio < 1 || criterio > 3) {
-        cout << "Entrada inválida. Escolha 1, 2 ou 3: ";
+        cout << "Entrada invÃ¡lida. Escolha 1, 2 ou 3: ";
         cin.clear();
-        //cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
     cin.ignore();
     cout << "Digite o termo: "; getline(cin, termo);
@@ -122,36 +121,36 @@ void pesquisarLivro() {
     if (!encontrado) cout << "Nenhum livro encontrado com o termo fornecido.\n";
 }
 
-void registrarUsuario() {
-    Usuario u;
+void registrarUtilizador() {
+    Utilizador u;
     cout << "Nome: "; getline(cin, u.nome);
     cout << "ID: "; getline(cin, u.id);
-    usuarios.push_back(u);
-    salvarUsuarios();
-    cout << "Usuário registrado com sucesso!\n";
+    utilizadores.push_back(u);
+    salvarUtilizadores();
+    cout << "Utilizador registrado com sucesso!\n";
 }
 
 void emprestarLivro() {
     string isbn, id;
     cout << "ISBN do livro: "; getline(cin, isbn);
-    cout << "ID do usuário: "; getline(cin, id);
+    cout << "ID do utilizador: "; getline(cin, id);
     for (auto &l : livros) {
         if (l.isbn == isbn && !l.emprestado) {
             l.emprestado = true;
-            l.idUsuario = id;
+            l.idUtilizador = id;
             l.dataEmprestimo = dataAtual();
-            for (auto &u : usuarios) {
+            for (auto &u : utilizadores) {
                 if (u.id == id) {
                     u.historico.push_back("Emprestado: " + l.titulo + " em " + l.dataEmprestimo);
                     break;
                 }
             }
-            salvarLivros(); salvarUsuarios();
+            salvarLivros(); salvarUtilizadores();
             cout << "Livro emprestado com sucesso!\n";
             return;
         }
     }
-    cout << "Livro não disponível ou ISBN incorreto.\n";
+    cout << "Livro nÃ£o disponÃ­vel ou ISBN incorreto.\n";
 }
 
 void devolverLivro() {
@@ -159,50 +158,49 @@ void devolverLivro() {
     cout << "ISBN do livro a devolver: "; getline(cin, isbn);
     for (auto &l : livros) {
         if (l.isbn == isbn && l.emprestado) {
-            for (auto &u : usuarios) {
-                if (u.id == l.idUsuario) {
+            for (auto &u : utilizadores) {
+                if (u.id == l.idUtilizador) {
                     u.historico.push_back("Devolvido: " + l.titulo + " em " + dataAtual());
                     break;
                 }
             }
             l.emprestado = false;
-            l.idUsuario = "";
+            l.idUtilizador = "";
             l.dataEmprestimo = "";
-            salvarLivros(); salvarUsuarios();
+            salvarLivros(); salvarUtilizadores();
             cout << "Livro devolvido com sucesso!\n";
             return;
         }
     }
-    cout << "Livro não encontrado ou não emprestado.\n";
+    cout << "Livro nÃ£o encontrado ou nÃ£o emprestado.\n";
 }
 
 void relatorios() {
-    cout << "\nRelatórios:\n";
-    cout << "1. Livros Emprestados\n2. Livros Disponíveis\n3. Histórico por Usuário\nEscolha: ";
+    cout << "\nRelatÃ³rios:\n";
+    cout << "1. Livros Emprestados\n2. Livros DisponÃ­veis\n3. HistÃ³rico por Utilizador\nEscolha: ";
     int opcao;
     while (!(cin >> opcao) || opcao < 1 || opcao > 3) {
-        cout << "Entrada inválida. Escolha entre 1 e 3: ";
+        cout << "Entrada invÃ¡lida. Escolha entre 1 e 3: ";
         cin.clear();
-        //cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
     cin.ignore();
     if (opcao == 1) {
         cout << "\nLivros Emprestados:\n";
-        for (auto &l : livros) if (l.emprestado) cout << l.titulo << " - " << l.autor << " (Emprestado por: " << l.idUsuario << ")\n";
+        for (auto &l : livros) if (l.emprestado) cout << l.titulo << " - " << l.autor << " (Emprestado por: " << l.idUtilizador << ")\n";
     } else if (opcao == 2) {
-        cout << "\nLivros Disponíveis:\n";
+        cout << "\nLivros DisponÃ­veis:\n";
         for (auto &l : livros) if (!l.emprestado) cout << l.titulo << " - " << l.autor << "\n";
     } else if (opcao == 3) {
         string id;
-        cout << "ID do usuário: "; getline(cin, id);
-        for (auto &u : usuarios) {
+        cout << "ID do utilizador: "; getline(cin, id);
+        for (auto &u : utilizadores) {
             if (u.id == id) {
-                cout << "Histórico de " << u.nome << ":\n";
+                cout << "HistÃ³rico de " << u.nome << ":\n";
                 for (auto &h : u.historico) cout << "- " << h << "\n";
                 return;
             }
         }
-        cout << "Usuário não encontrado.\n";
+        cout << "Utilizador nÃ£o encontrado.\n";
     }
 }
 
@@ -210,18 +208,17 @@ void menu() {
     int opcao;
     do {
         cout << "\n=== Sistema de Biblioteca ===\n";
-        cout << "1. Adicionar Livro\n2. Pesquisar Livro\n3. Registrar Usuário\n4. Emprestar Livro\n5. Devolver Livro\n6. Relatórios\n0. Sair\n";
+        cout << "1. Adicionar Livro\n2. Pesquisar Livro\n3. Registrar Utilizador\n4. Emprestar Livro\n5. Devolver Livro\n6. RelatÃ³rios\n0. Sair\n";
         cout << "Escolha: ";
         while (!(cin >> opcao) || opcao < 0 || opcao > 6) {
-            cout << "Opção inválida. Escolha entre 0 e 6: ";
+            cout << "OpÃ§Ã£o invÃ¡lida. Escolha entre 0 e 6: ";
             cin.clear();
-            //cin.ignore(numeric_limits<streamsize>::max(), '\n');
         }
         cin.ignore();
         switch (opcao) {
             case 1: adicionarLivro(); break;
             case 2: pesquisarLivro(); break;
-            case 3: registrarUsuario(); break;
+            case 3: registrarUtilizador(); break;
             case 4: emprestarLivro(); break;
             case 5: devolverLivro(); break;
             case 6: relatorios(); break;
@@ -232,8 +229,7 @@ void menu() {
 
 int main() {
     carregarLivros();
-    carregarUsuarios();
+    carregarUtilizadores();
     menu();
     return 0;
 }
-
